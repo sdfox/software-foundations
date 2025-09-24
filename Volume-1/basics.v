@@ -99,3 +99,52 @@ Proof.
   rewrite <- mult_n_O.
   reflexivity.
 Qed.
+
+(* andb_true_elim2 *)
+Definition andb (b1:bool) (b2:bool) : bool :=
+  match b1 with
+  | true => b2
+  | false => false
+  end.
+
+Theorem andb_true_elim2 : forall b c : bool,
+  andb b c = true -> c = true.
+Proof.
+  intros b c.
+  destruct b eqn:Eb.
+  - simpl.
+    intros H.
+    rewrite -> H.
+    reflexivity.
+  - simpl.
+    destruct c eqn:Ec.
+    + intros H.
+      reflexivity.
+    + intros H.
+      rewrite -> H.
+      reflexivity.
+Qed.
+
+(* zero_nbeq_plus_1 *)
+Fixpoint eqb (n m : nat) : bool :=
+  match n with
+  | O => match m with
+         | O => true
+         | S m' => false
+         end
+  | S n' => match m with
+            | O => false
+            | S m' => eqb n' m'
+            end
+  end.
+Notation "x =? y" := (eqb x y) (at level 70) : nat_scope.
+Theorem zero_nbeq_plus_1 : forall n : nat,
+  0 =? (n + 1) = false.
+Proof.
+  intros n.
+  destruct n as [| n'] eqn:E.
+  - simpl.
+    reflexivity.
+  -simpl.
+   reflexivity.
+Qed.
