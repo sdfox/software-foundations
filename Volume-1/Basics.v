@@ -344,3 +344,4 @@ Proof. simpl. reflexivity. Qed.
 Example test_bin_incr6 :
         bin_to_nat (incr (incr (B Z))) = 2 + bin_to_nat (B Z).
 Proof. simpl. reflexivity. Qed.
+
