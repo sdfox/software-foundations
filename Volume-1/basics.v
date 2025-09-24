@@ -76,3 +76,26 @@ Example test_ltb2: (ltb 2 4) = true.
 Proof. simpl. reflexivity. Qed.
 Example test_ltb3: (ltb 4 2) = false.
 Proof. simpl. reflexivity. Qed.
+
+(* plus_id_exercise *)
+Theorem plus_id_exercise : forall n m o : nat,
+  n = m -> m = o -> n + m = m + o.
+Proof.
+  intros n m o.
+  intros H0.
+  rewrite H0.
+  intros H1.
+  rewrite <- H1.
+  reflexivity.
+Qed.
+
+(* mult_n_1 *)
+Notation "x * y" := (mult x y).
+Theorem mult_n_1 : forall n : nat,
+  n * 1 = n.
+Proof.
+  intros n.
+  rewrite <- mult_n_Sm.
+  rewrite <- mult_n_O.
+  reflexivity.
+Qed.
