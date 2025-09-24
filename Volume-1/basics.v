@@ -250,3 +250,97 @@ Proof.
   -simpl.
    reflexivity.
 Qed.
+
+(* identify_fn_applied_twice *)
+Theorem identity_fn_applied_twice :
+  forall (f : bool -> bool),
+  (forall (x : bool), f x = x) ->
+  forall (b : bool), f (f b) = b.
+Proof.
+  intros f.
+  intros H2.
+  intros b.
+  rewrite H2.
+  rewrite H2.
+  reflexivity.
+Qed.
+
+(* negation_fn_applied_twice *)
+Theorem negation_fn_applied_twice :
+  forall (f : bool -> bool),
+  (forall (x : bool), f x = negb x) ->
+  forall (b : bool), f (f b) = b.
+Proof.
+  intros f.
+  intros H2.
+  destruct b eqn:E.
+  - rewrite H2.
+    rewrite H2.
+    simpl.
+    reflexivity.
+  - rewrite H2.
+    rewrite H2.
+    simpl.
+    reflexivity.
+Qed.
+Definition manual_grade_for_negation_fn_applied_twice : option (nat*string) := None.
+
+(* andb_eq_orb *)
+(* Note: ∀ b c : bool, b && c = b || c -> b = c *)
+Theorem andb_eq_orb :
+  forall (b c : bool),
+  (andb b c = orb b c) ->
+  b = c.
+Proof.
+  destruct b eqn:Eb.
+  - destruct c eqn:Ec.
+    + (* b:true c:true *)
+      simpl.
+      reflexivity.
+    + (*b:true c:false *)
+      simpl.
+      intros H.
+      rewrite H.
+      reflexivity.
+  - destruct c eqn:Ec.
+    + (* b:false c:true *)
+      simpl.
+      intros H.
+      rewrite H.
+      reflexivity.
+    + (* b:false c:false *)
+      simpl.
+      reflexivity.
+Qed.
+
+(* binary *)
+Inductive bin : Type :=
+  | Z
+  | A (n : bin)
+  | B (n : bin).
+Fixpoint incr (m:bin) : bin :=
+  match m with
+  | Z => B Z
+  | A m' => B m'
+  | B m' => A (incr m')
+  end.
+Fixpoint bin_to_nat (m:bin) : nat :=
+  match m with
+  | Z => O
+  | A m' => mult 2 (bin_to_nat m')
+  | B m' => mult 2 (bin_to_nat m') + 1
+  end.
+Example test_bin_incr1 : (incr (B Z)) = A (B Z).
+Proof. simpl. reflexivity. Qed.
+Example test_bin_incr2 : (incr (A (B Z))) = B (B Z).
+Proof. simpl. reflexivity. Qed.
+Example test_bin_incr3 : (incr (B (B Z))) = A (A (B Z)).
+Proof. simpl. reflexivity. Qed.
+Example test_bin_incr4 : bin_to_nat (A (B Z)) = 2.
+Proof. simpl. reflexivity. Qed.
+Example test_bin_incr5 :
+        bin_to_nat (incr (B Z)) = 1 + bin_to_nat (B Z).
+Proof. simpl. reflexivity. Qed.
+Example test_bin_incr6 :
+        bin_to_nat (incr (incr (B Z))) = 2 + bin_to_nat (B Z).
+Proof. simpl. reflexivity. Qed.
