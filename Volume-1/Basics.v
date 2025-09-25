@@ -60,6 +60,13 @@ Definition pred (n : nat) : nat :=
 
 End NatPlayground.
 
+Fixpoint evenb (n:nat) : bool :=
+  match n with
+  | O => true
+  | S O => false
+  | S (S n') => evenb n'
+  end.
+
 Module NatPlayground2.
 
 Fixpoint plus (n : nat) (m : nat) : nat :=
