@@ -121,3 +121,80 @@ Proof.
     + simpl.
       reflexivity.
 Qed.
+
+(** add_comm_informal
+  Theorem: For any n, m, n + m = m + n
+  Proof: By induction on n.
+    First, suppose n = 0. We must show that
+      0 + m = m + 0.
+    By the definition of + and Theorem add_0_r, we can simplify it to
+      m = m.
+    Subproof complete.
+
+    Second, the induction hypothesis is n' + m = m + n'
+    Suppose n = S n', we must show that
+      S n' + m' = m + Sn'
+    We can simplify it to
+      S (n'+ m) = m + S n'
+    Rewrite the right part with Theorem plus_n_Sm: for all n m, nat, S (n + m) = n + (S m).
+      S (n' + m) = S (m + n')
+    Rewrite again with the induction hypothesis.
+      S (n' + m) = S (n' + m)
+  Qed.
+*)
+
+(** eqb_refl_informal
+  Theorem:  forall n : nat, (n =? n) = true.
+  Proof: By induction on n.
+    First, suppose n = 0. We must show that
+      0 =? 0 = true.
+    Obviously proof by the definition of =?.
+    Second, induction hypothesis: n' =? n' = true.
+    Suppose n = S n', we must show that
+      S n' =? S n' = true.
+    We can simplify the left part to n' =? n' by using theorem plus_n_Sm
+    Immediate from the induction hypothesis.
+  Qed.
+*)
+
+(* mul_comm *)
+Theorem add_shuffle3 : forall n m p : nat,
+  n + (m + p) = m + (n + p).
+Proof.
+  intros n m p.
+  rewrite -> add_assoc.
+  rewrite -> add_assoc.
+  assert (H: n + m = m + n).
+  { rewrite add_comm. reflexivity. }
+  rewrite H.
+  reflexivity.
+Qed.
+
+Theorem mul_m_Sn : forall n m : nat,
+  m * (S n) = m * n + m.
+Proof.
+  intros n m.
+  induction m as [| m' IHm'].
+  - simpl.
+    reflexivity.
+  - simpl.
+    rewrite IHm'.
+    rewrite <- plus_n_Sm.
+    rewrite add_assoc.
+    reflexivity.
+Qed.
+
+Theorem mul_comm : forall m n : nat,
+  m * n = n * m.
+Proof.
+  intros n m.
+  induction n as [| n' IHn'].
+  - simpl.
+    rewrite mul_0_r.
+    reflexivity.
+  - simpl.
+    rewrite mul_m_Sn.
+    rewrite IHn'.
+    rewrite add_comm.
+    reflexivity.
+Qed.
