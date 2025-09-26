@@ -198,3 +198,81 @@ Proof.
     rewrite add_comm.
     reflexivity.
 Qed.
+
+(* add_shuffle3' *)
+Theorem add_shuffle3' : forall n m p : nat,
+  n + (m + p) = m + (n + p).
+Proof.
+  intros n m p.
+  rewrite add_assoc.
+  rewrite add_assoc.
+  replace (n + m) with (m + n).
+  - reflexivity.
+  - rewrite add_comm.
+    reflexivity.
+Qed.
+
+(* nat to bin and back to nat *)
+Inductive bin : Type :=
+  | Z
+  | B0 (n : bin)
+  | B1 (n : bin)
+.
+
+Fixpoint incr (m:bin) : bin :=
+  match m with
+  | Z => B1 Z
+  | B0 m' => B1 m'
+  | B1 m' => B0 (incr m')
+  end.
+
+Fixpoint bin_to_nat (m:bin) : nat :=
+  match m with
+  | Z => O
+  | B0 m' => mult 2 (bin_to_nat m')
+  | B1 m' => mult 2 (bin_to_nat m') + 1
+  end.
+
+Theorem bin_to_nat_pres_incr : forall b : bin,
+  bin_to_nat (incr b) = 1 + bin_to_nat b.
+Proof.
+  intros b.
+  simpl.
+  assert (H: forall m : nat, S m  = m + 1).
+    { intros m.
+      induction m as [].
+      + simpl.
+        reflexivity.
+      + simpl.
+        rewrite IHm.
+        reflexivity.
+     }
+  induction b as [].
+  - simpl.
+    reflexivity.
+  - simpl.
+    rewrite add_0_r.
+    rewrite plus_n_Sm.
+    replace (S (bin_to_nat b)) with (bin_to_nat b + 1).
+    + rewrite add_assoc.
+      reflexivity.
+    + rewrite <- H.
+      reflexivity.
+  - simpl.
+    rewrite add_0_r.
+    rewrite add_0_r.
+    rewrite H.
+    rewrite IHb.
+    rewrite H.
+    rewrite add_assoc.
+    set (B:= bin_to_nat b) in *.
+    replace (B + 1 + B) with (B + B + 1).
+    + simpl.
+      reflexivity.
+    + simpl.
+      assert (H0: B + B + 1 = B + (B + 1)).
+      {simpl. rewrite add_assoc. reflexivity. }
+      rewrite H0.
+      rewrite add_comm.
+      reflexivity.
+Qed.
