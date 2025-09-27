@@ -49,6 +49,73 @@ Theorem surjective_pairing : forall (p : natprod),
 Proof.
   intros p. destruct p as [n m]. simpl. reflexivity. Qed.
 
+(* List of numbers *)
+Inductive natlist : Type :=
+  | nil
+  | cons (n : nat) (l : natlist).
+
+Notation "x :: l" := (cons x l)
+                     (at level 60, right associativity).
+Notation "[ ]" := nil.
+Notation "[ x ; .. ; y ]" := (cons x .. (cons y nil) ..).
+
+(* return a list of length count in which every element is n *)
+Fixpoint repeat (n count : nat) : natlist :=
+  match count with
+  | O => nil
+  | S count' => n :: (repeat n count')
+  end.
+
+(* calculate the length of a list *)
+Fixpoint length (l:natlist) : nat :=
+  match l with
+  | nil => O
+  | h :: t => S (length t)
+  end.
+
+(* append two lists *)
+Fixpoint app (l1 l2 : natlist) : natlist :=
+  match l1 with
+  | nil => l2
+  | h :: t => h :: (app t l2)
+  end.
+Notation "x ++ y" := (app x y)
+                     (right associativity, at level 60).
+
+Example test_app1: [1;2;3] ++ [4;5] = [1;2;3;4;5].
+Proof. reflexivity. Qed.
+Example test_app2: nil ++ [4;5] = [4;5].
+Proof. reflexivity. Qed.
+Example test_app3: [1;2;3] ++ nil = [1;2;3].
+Proof. reflexivity. Qed.
+
+(**
+  The hd function returns the first element (the "head") of the list.
+  The tl returns everything but the first element (the "tail").
+  Since the empty list has no first element, we pass a default value to be returned in that case.
+*)
+Definition hd (default : nat) (l : natlist) : nat :=
+  match l with
+  | nil => default
+  | h :: t => h
+  end.
+Definition tl (l : natlist) : natlist :=
+  match l with
+  | nil => nil
+  | h :: t => t
+  end.
+Example test_hd1: hd 0 [1;2;3] = 1.
+Proof. reflexivity. Qed.
+Example test_hd2: hd 0 [] = 0.
+Proof. reflexivity. Qed.
+Example test_tl: tl [1;2;3] = [2;3].
+Proof. reflexivity. Qed.
+
+(* Bags via Lists *)
+Definition bag := natlist.
+
+(* Reasoning About Lists *)
+
 (**Exercise******************************************************)
 (* snd_fst_is_swap *)
 Theorem snd_fst_is_swap : forall (p : natprod),
@@ -69,3 +136,141 @@ Proof.
   simpl.
   reflexivity.
 Qed.
+
+(* list_funs *)
+Fixpoint nonzeros (l:natlist) : natlist :=
+  match l with
+  | nil => nil
+  | h :: t => match h with
+              | O => nonzeros t
+              | S _ => h :: nonzeros t
+              end
+  end.
+Example test_nonzeros:
+  nonzeros [0;1;0;2;3;0;0] = [1;2;3].
+Proof. simpl. reflexivity. Qed.
+
+Fixpoint oddmembers (l:natlist) : natlist :=
+  match l with
+  | nil => nil
+  | h :: t => match (evenb h) with
+              | true => oddmembers t
+              | false => h :: oddmembers t
+              end
+  end.
+Example test_oddmembers:
+  oddmembers [0;1;0;2;3;0;0] = [1;3].
+Proof. simpl. reflexivity. Qed.
+
+Definition countoddmembers (l:natlist) : nat :=
+  (length (oddmembers l)).
+Example test_countoddmembers1:
+  countoddmembers [1;0;3;1;4;5] = 4.
+Proof. simpl. reflexivity. Qed.
+Example test_countoddmembers2:
+  countoddmembers [0;2;4] = 0.
+Proof. simpl. reflexivity. Qed.
+Example test_countoddmembers3:
+  countoddmembers nil = 0.
+Proof. simpl. reflexivity. Qed.
+
+(* alternate *)
+Fixpoint alternate (l1 l2 : natlist) : natlist :=
+  match l1, l2 with
+  | nil, nil => nil
+  | nil, _ => l2
+  | _, nil => l1
+  | h1 :: t1, h2 :: t2 => h1 :: h2 :: (alternate t1 t2)
+  end.
+Example test_alternate1:
+  alternate [1;2;3] [4;5;6] = [1;4;2;5;3;6].
+Proof. simpl. reflexivity. Qed.
+Example test_alternate2:
+  alternate [1] [4;5;6] = [1;4;5;6].
+Proof. simpl. reflexivity. Qed.
+Example test_alternate3:
+  alternate [1;2;3] [4] = [1;4;2;3].
+Proof. simpl. reflexivity. Qed.
+Example test_alternate4:
+  alternate [] [20;30] = [20;30].
+Proof. simpl. reflexivity. Qed.
+
+(* bag_functions *)
+Fixpoint count (v : nat) (s : bag) : nat :=
+  match s with
+  | nil => 0
+  | h :: t => match (h =? v) with
+              | true => S (count v t)
+              | false => count v t
+              end
+  end.
+Example test_count1: count 1 [1;2;3;1;4;1] = 3.
+Proof. simpl. reflexivity. Qed.
+Example test_count2: count 6 [1;2;3;1;4;1] = 0.
+Proof. simpl. reflexivity. Qed.
+
+Definition sum : bag -> bag -> bag :=
+  app.
+Example test_sum1: count 1 (sum [1;2;3] [1;4;1]) = 3.
+Proof. simpl. reflexivity. Qed.
+Definition add (v : nat) (s : bag) : bag :=
+  v :: s.
+Example test_add1: count 1 (add 1 [1;4;1]) = 3.
+Proof. simpl. reflexivity. Qed.
+Example test_add2: count 5 (add 1 [1;4;1]) = 0.
+Proof. simpl. reflexivity. Qed.
+Definition member (v : nat) (s : bag) : bool :=
+  match count v s with
+  | 0 => false
+  | _ => true
+  end.
+Example test_member1: member 1 [1;4;1] = true.
+Proof. simpl. reflexivity. Qed.
+Example test_member2: member 2 [1;4;1] = false.
+Proof. simpl. reflexivity. Qed.
+
+(* bag_more_functions *)
+Fixpoint remove_one (v : nat) (s : bag) : bag :=
+  match s with
+  | nil => nil
+  | h :: t => match (h =? v) with
+              | true => t
+              | false => h :: (remove_one v t)
+              end
+  end.
+Example test_remove_one1:
+  count 5 (remove_one 5 [2;1;5;4;1]) = 0.
+Proof. simpl. reflexivity. Qed.
+Example test_remove_one2:
+  count 5 (remove_one 5 [2;1;4;1]) = 0.
+Proof. simpl. reflexivity. Qed.
+Example test_remove_one3:
+  count 4 (remove_one 5 [2;1;4;5;1;4]) = 2.
+Proof. simpl. reflexivity. Qed.
+Example test_remove_one4:
+  count 5 (remove_one 5 [2;1;5;4;5;1;4]) = 1.
+Proof. simpl. reflexivity. Qed.
+Fixpoint remove_all (v:nat) (s:bag) : bag :=
+  match s with
+  | nil => nil
+  | h :: t => if (h =? v) then (remove_all v t)
+              else h :: remove_all v t
+  end.
+Example test_remove_all1: count 5 (remove_all 5 [2;1;5;4;1]) = 0.
+Proof. simpl. reflexivity. Qed.
+Example test_remove_all2: count 5 (remove_all 5 [2;1;4;1]) = 0.
+Proof. simpl. reflexivity. Qed.
+Example test_remove_all3: count 4 (remove_all 5 [2;1;4;5;1;4]) = 2.
+Proof. simpl. reflexivity. Qed.
+Example test_remove_all4: count 5 (remove_all 5 [2;1;5;4;5;1;4;5;1;4]) = 0.
+Proof. simpl. reflexivity. Qed.
+Fixpoint included (s1 : bag) (s2 : bag) : bool :=
+  match s1 with
+  | nil => true
+  | h :: t => if (member h s2) then (included t (remove_one h s2))
+              else false
+  end.
+Example test_included1: included [1;2] [2;1;4;1] = true.
+Proof. simpl. reflexivity. Qed.
+Example test_included2: included [1;2;2] [2;1;4;1] = false.
+Proof. simpl. reflexivity. Qed.
