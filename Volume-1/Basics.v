@@ -67,6 +67,13 @@ Fixpoint evenb (n:nat) : bool :=
   | S (S n') => evenb n'
   end.
 
+Definition oddb (n:nat) : bool :=
+  negb (evenb n).
+Example test_oddb1: oddb 1 = true.
+Proof. simpl. reflexivity. Qed.
+Example test_oddb2: oddb 4 = false.
+Proof. simpl. reflexivity. Qed.
+
 Module NatPlayground2.
 
 Fixpoint plus (n : nat) (m : nat) : nat :=
