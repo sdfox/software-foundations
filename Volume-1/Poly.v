@@ -469,4 +469,143 @@ Proof.
     reflexivity.
 Qed.
 
+(* fold_map *)
+Check fold.
+Definition fold_map {X Y: Type} (f: X -> Y) (l: list X) : list Y :=
+  fold (fun h t => f h :: t) l [].
+
+Theorem fold_map_correct : forall X Y (f : X -> Y) (l : list X),
+  fold_map f l = map f l.
+Proof.
+  intros X Y f l.
+  simpl.
+  induction l as [| h t IHl].
+  - simpl.
+    reflexivity.
+  - simpl.
+    rewrite <- IHl.
+    reflexivity.
+Qed.
+(* Do not modify the following line: *)
+Definition manual_grade_for_fold_map : option (nat*string) := None.
+
+(* currying *)
+Definition prod_curry {X Y Z : Type}
+  (f : X * Y -> Z) (x : X) (y : Y) : Z := f (x, y).
+Definition prod_uncurry {X Y Z : Type}
+  (f : X -> Y -> Z) (p : X * Y) : Z := f (fst p) (snd p).
+
+Example test_map1': map (plus 3) [2;0;2] = [5;3;5].
+Proof. reflexivity. Qed.
+
+Check @prod_curry.
+Check @prod_uncurry.
+Theorem uncurry_curry : forall (X Y Z : Type)
+                        (f : X -> Y -> Z)
+                        x y,
+  prod_curry (prod_uncurry f) x y = f x y.
+Proof.
+  intros X Y Z f x y.
+  reflexivity.
+Qed.
+Theorem curry_uncurry : forall (X Y Z : Type)
+                        (f : (X * Y) -> Z) (p : X * Y),
+  prod_uncurry (prod_curry f) p = f p.
+Proof.
+  intros X Y Z f p.
+  destruct p as [x y].
+  reflexivity.
+Qed.
+
+(* nth_error_informal *)
+Fixpoint nth_error {X : Type} (l : list X) (n : nat) : option X :=
+     match l with
+     | [] => None
+     | a :: l' => if n =? O then Some a else nth_error l' (pred n)
+     end.
+(**
+  Theorem ∀ X l n, length l = n -> @nth_error X l n = None
+  Proof: by induction on l.
+  First, suppose l = []. We must show that
+    length [] = n -> nth_error [] n = None
+  Suppose length [] = n, so n = 0
+    nth_error [] 0 = None
+  This follows directly from the definition of nth_error and None.
+
+  Next, we must show that
+    length (h :: t) = n -> nth_error (h :: t) n = None
+  Since we have induction hypothesis:
+    length t = n -> nth_error t n = None
+*)
+(* Do not modify the following line: *)
+Definition manual_grade_for_informal_proof : option (nat*string) := None.
+
+(* Church Numerals (Advanced) *)
+Module Church.
+Definition cnat := forall X : Type, (X -> X) -> X -> X.
+Definition one : cnat :=
+  fun (X : Type) (f : X -> X) (x : X) => f x.
+Definition two : cnat :=
+  fun (X : Type) (f : X -> X) (x : X) => f (f x).
+Definition zero : cnat :=
+  fun (X : Type) (f : X -> X) (x : X) => x.
+Definition three : cnat := @doit3times.
+
+Definition zero' : cnat :=
+  fun (X : Type) (succ : X -> X) (zero : X) => zero.
+Definition one' : cnat :=
+  fun (X : Type) (succ : X -> X) (zero : X) => succ zero.
+Definition two' : cnat :=
+  fun (X : Type) (succ : X -> X) (zero : X) => succ (succ zero).
+
+Example zero_church_peano : zero nat S O = 0.
+Proof. reflexivity. Qed.
+Example one_church_peano : one nat S O = 1.
+Proof. reflexivity. Qed.
+Example two_church_peano : two nat S O = 2.
+Proof. reflexivity. Qed.
+
+Check (two nat S O).
+(* church_scc *)
+Definition scc (n : cnat) : cnat :=
+  fun (X : Type) (f : X -> X) (x : X) => f (n X f x).
+Example scc_1 : scc zero = one.
+Proof. reflexivity. Qed.
+Example scc_2 : scc one = two.
+Proof. reflexivity. Qed.
+Example scc_3 : scc two = three.
+Proof. reflexivity. Qed.
+
+(* church_plus *)
+Definition plus (n m : cnat) : cnat :=
+  fun (X : Type) (f : X -> X) (x : X) => (m X f (n X f x)).
+Example plus_1 : plus zero one = one.
+Proof. reflexivity. Qed.
+Example plus_2 : plus two three = plus three two.
+Proof. reflexivity. Qed.
+Example plus_3 :
+  plus (plus two two) three = plus one (plus three three).
+Proof. reflexivity. Qed.
+
+(* church_mult *)
+Definition mult (n m : cnat) : cnat :=
+  fun (X : Type) (f : X -> X) (x : X) => m X (n X f) x.
+Example mult_1 : mult one one = one.
+Proof. reflexivity. Qed.
+Example mult_2 : mult zero (plus three three) = zero.
+Proof. reflexivity. Qed.
+Example mult_3 : mult two three = plus three three.
+Proof. reflexivity. Qed.
+
+(* church_exp *)
+Definition exp (n m : cnat) : cnat :=
+  fun (X : Type) => m (X -> X) (n X).
+Example exp_1 : exp two two = plus two two.
+Proof. reflexivity. Qed.
+Example exp_2 : exp three zero = one.
+Proof. reflexivity. Qed.
+Example exp_3 : exp three two = plus (mult two (mult two two)) one.
+Proof. reflexivity. Qed.
+
+End Church.
 End Exercises.
