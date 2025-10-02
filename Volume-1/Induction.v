@@ -107,7 +107,7 @@ Qed.
 
 (* even_S *)
 Theorem even_S : forall n : nat,
-  evenb (S n) = negb (evenb n).
+  even (S n) = negb (even n).
 Proof.
   intros n.
   induction n as [| n' IHn'].
@@ -115,7 +115,7 @@ Proof.
     reflexivity.
   - rewrite IHn'.
     simpl.
-    destruct (evenb n').
+    destruct (even n').
     + simpl.
       reflexivity.
     + simpl.

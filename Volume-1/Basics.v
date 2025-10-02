@@ -60,18 +60,18 @@ Definition pred (n : nat) : nat :=
 
 End NatPlayground.
 
-Fixpoint evenb (n:nat) : bool :=
+Fixpoint even (n:nat) : bool :=
   match n with
   | O => true
   | S O => false
-  | S (S n') => evenb n'
+  | S (S n') => even n'
   end.
 
-Definition oddb (n:nat) : bool :=
-  negb (evenb n).
-Example test_oddb1: oddb 1 = true.
+Definition odd (n:nat) : bool :=
+  negb (even n).
+Example test_odd1: odd 1 = true.
 Proof. simpl. reflexivity. Qed.
-Example test_oddb2: oddb 4 = false.
+Example test_odd2: odd 4 = false.
 Proof. simpl. reflexivity. Qed.
 
 Module NatPlayground2.

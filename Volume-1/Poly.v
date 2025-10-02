@@ -290,7 +290,7 @@ Fixpoint filter {X:Type} (test: X->bool) (l:list X) : list X :=
     if test h then h :: (filter test t)
     else filter test t
   end.
-Example test_filter1: filter evenb [1;2;3;4] = [2;4].
+Example test_filter1: filter even [1;2;3;4] = [2;4].
 Proof. reflexivity. Qed.
 
 Definition length_is_1 {X : Type} (l : list X) : bool :=
@@ -302,7 +302,7 @@ Example test_filter2:
 Proof. reflexivity. Qed.
 
 Definition countoddmembers' (l:list nat) : nat :=
-  length (filter oddb l).
+  length (filter odd l).
 Example test_countoddmembers'1: countoddmembers' [1;0;3;1;4;5] = 4.
 Proof. reflexivity. Qed.
 Example test_countoddmembers'2: countoddmembers' [0;2;4] = 0.
@@ -325,7 +325,7 @@ Check Prop.
 
 (* filter_even_gt7 *)
 Definition filter_even_gt7 (l : list nat) : list nat :=
-  filter (fun x => (ltb 7 x)) (filter evenb l).
+  filter (fun x => (ltb 7 x)) (filter even l).
 Example test_filter_even_gt7_1 :
   filter_even_gt7 [1;2;6;9;10;3;12;8] = [10;12;8].
 Proof. reflexivity. Qed.
@@ -340,7 +340,7 @@ Definition partition {X : Type}
                    : list X * list X
 :=
   (filter test l, filter (fun x => negb (test x)) l).
-Example test_partition1: partition oddb [1;2;3;4;5] = ([1;3;5], [2;4]).
+Example test_partition1: partition odd [1;2;3;4;5] = ([1;3;5], [2;4]).
 Proof. reflexivity. Qed.
 Example test_partition2: partition (fun x => false) [5;9;0] = ([], [5;9;0]).
 Proof. reflexivity. Qed.
@@ -354,10 +354,10 @@ Fixpoint map {X Y : Type} (f : X->Y) (l : list X) : list Y :=
 Example test_map1: map (fun x => plus 3 x) [2;0;2] = [5;3;5].
 Proof. reflexivity. Qed.
 Example test_map2:
-  map oddb [2;1;2;5] = [false;true;false;true].
+  map odd [2;1;2;5] = [false;true;false;true].
 Proof. reflexivity. Qed.
 Example test_map3:
-    map (fun n => [evenb n;oddb n]) [2;1;2;5]
+    map (fun n => [even n;odd n]) [2;1;2;5]
   = [[true;false];[false;true];[true;false];[false;true]].
 Proof. reflexivity. Qed.
 

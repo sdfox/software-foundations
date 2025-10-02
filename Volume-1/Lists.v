@@ -306,7 +306,7 @@ Proof. simpl. reflexivity. Qed.
 Fixpoint oddmembers (l:natlist) : natlist :=
   match l with
   | nil => nil
-  | h :: t => match (evenb h) with
+  | h :: t => match (even h) with
               | true => oddmembers t
               | false => h :: oddmembers t
               end
