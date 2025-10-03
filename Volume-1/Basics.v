@@ -60,6 +60,13 @@ Definition pred (n : nat) : nat :=
 
 End NatPlayground.
 
+Definition minustwo (n : nat) : nat :=
+  match n with
+  | O => O
+  | S O => O
+  | S (S n') => n'
+  end.
+
 Fixpoint even (n:nat) : bool :=
   match n with
   | O => true
