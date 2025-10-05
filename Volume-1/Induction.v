@@ -199,6 +199,90 @@ Proof.
     reflexivity.
 Qed.
 
+(* Exercise: 3 stars, standard, optional (more_exercises) *)
+Theorem leb_refl : forall n:nat,
+  (n <=? n) = true.
+Proof.
+  intros n.
+  induction n as [| n'].
+  - simpl.
+    reflexivity.
+  - simpl.
+    apply IHn'.
+Qed.
+Theorem zero_neqb_S : forall n:nat,
+  0 =? (S n) = false.
+Proof.
+  intros n.
+  simpl.
+  reflexivity.
+Qed.
+Theorem andb_false_r : forall b : bool,
+  andb b false = false.
+Proof.
+  intros b.
+  destruct b.
+  - simpl.
+    reflexivity.
+  - simpl.
+    reflexivity.
+Qed.
+Theorem S_neqb_0 : forall n:nat,
+  (S n) =? 0 = false.
+Proof.
+  intros n.
+  simpl.
+  reflexivity.
+Qed.
+Theorem mult_1_l : forall n:nat, 1 * n = n.
+Proof.
+  intros n.
+  simpl.
+  apply add_0_r.
+Qed.
+Theorem all3_spec : forall b c : bool,
+  orb
+    (andb b c)
+    (orb (negb b)
+         (negb c))
+    = true.
+Proof.
+  intros b c.
+  destruct b.
+  - simpl.
+    destruct c.
+    + simpl.
+      reflexivity.
+    + simpl.
+      reflexivity.
+  - simpl.
+    reflexivity.
+Qed.
+Theorem mult_plus_distr_r : forall n m p : nat,
+  (n + m) * p = (n * p) + (m * p).
+Proof.
+  intros n m p.
+  induction n as [| n'].
+  - simpl.
+    reflexivity.
+  - simpl.
+    rewrite IHn'.
+    rewrite add_assoc.
+    reflexivity.
+Qed.
+Theorem mult_assoc : forall n m p : nat,
+  n * (m * p) = (n * m) * p.
+Proof.
+  intros n m p.
+  induction n as [| n'].
+  - simpl.
+    reflexivity.
+  - simpl.
+    rewrite IHn'.
+    rewrite mult_plus_distr_r.
+    reflexivity.
+Qed.
+
 (* add_shuffle3' *)
 Theorem add_shuffle3' : forall n m p : nat,
   n + (m + p) = m + (n + p).
