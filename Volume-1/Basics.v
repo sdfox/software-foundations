@@ -219,6 +219,18 @@ Proof. simpl. reflexivity. Qed.
 Example test_ltb3: (ltb 4 2) = false.
 Proof. simpl. reflexivity. Qed.
 
+Theorem plus_id_example : forall n m:nat,
+  n = m ->
+  n + n = m + m.
+Proof.
+  (* move both quantifiers into the context: *)
+  intros n m.
+  (* move the hypothesis into the context: *)
+  intros H.
+  (* rewrite the goal using the hypothesis: *)
+  rewrite  H.
+  reflexivity. Qed.
+
 (* plus_id_exercise *)
 Theorem plus_id_exercise : forall n m o : nat,
   n = m -> m = o -> n + m = m + o.
