@@ -197,3 +197,312 @@ Proof.
   + apply perm3_swap23.
   + apply perm3_swap23.
 Qed.
+
+Module Ev3.
+(* Example: Evenness(yet again) *)
+Inductive ev : nat -> Prop :=
+  | ev_0 : ev 0
+  | ev_SS (n : nat) (H : ev n) : ev (S (S n)).
+(**
+  0 in the type of ev_0 and S (S n) in the type of ev_SS
+*)
+Inductive list (X : Type) : Type :=
+  | nil                         : list X
+  | cons (x : X) (l : list X)   : list X.
+
+Fail Inductive wrong_ev (n : nat) : Prop :=
+  | wrong_ev_0 : wrong_ev 0
+  | wrong_ev_SS (H : wrong_ev n) : wrong_ev (S (S n)).
+
+Check ev_0 : ev 0.
+Check ev_SS : forall (n : nat), ev n -> ev (S (S n)).
+End Ev3.
+
+Module Ev_Playground.
+Inductive ev : nat -> Prop :=
+  | ev_0 : ev 0
+  | ev_SS : forall (n : nat), ev n -> ev (S (S n)).
+Theorem ev_4 : ev 4.
+Proof. apply ev_SS. apply ev_SS. apply ev_0. Qed.
+Theorem ev_4' : ev 4.
+Proof. apply (ev_SS 2 (ev_SS 0 ev_0)). Qed.
+Theorem ev_plus4 : forall n, ev n -> ev (4 + n).
+Proof.
+  intros n H.
+  apply ev_SS.
+  apply ev_SS.
+  apply H.
+Qed.
+
+(* Exercise: ev_double *)
+Theorem ev_double : forall n, ev (double n).
+Proof.
+  intros n.
+  simpl.
+  induction n as [| n IHn].
+  - simpl. apply ev_0.
+  - simpl. apply ev_SS. apply IHn.
+Qed.
+End Ev_Playground.
+
+(* Contructing Evidence for Permutations *)
+Lemma Perm3_rev_3 : Perm3 [1;2;3] [3;2;1].
+Proof.
+  apply perm3_trans with (l2:=[2;3;1]).
+  - apply perm3_trans with (l2:=[2;1;3]).
+    + apply perm3_swap12.
+    + apply perm3_swap23.
+  - apply perm3_swap12.
+Qed.
+Lemma Perm3_rev_4 : Perm3 [1;2;3] [3;2;1].
+Proof.
+  apply (perm3_trans _ [2;3;1] _
+          (perm3_trans _ [2;1;3] _
+            (perm3_swap12 _ _ _)
+            (perm3_swap23 _ _ _))
+          (perm3_swap12 _ _ _)).
+Qed.
+
+(* Using Evidence in Proofs *)
+Theorem ev_inversion : forall (n : nat),
+  ev n ->
+  (n = 0) \/ (exists n', n = (S (S n')) /\ ev n').
+Proof.
+  intros n E.
+  destruct E as [ | n' E'] eqn:EE.
+  - (* E = ev_0 : ev 0 *)
+    left. reflexivity.
+  - (* E = ev_SS n' E' : ev (S (S n')) *)
+    right. exists n'. split. reflexivity. apply E'.
+Qed.
+
+(* Exercise: 1 star, standard (le_inversion) *)
+Theorem le_inversion : forall (n m : nat),
+  le n m ->
+  (n = m) \/ (exists m', m = S m' /\ le n m').
+Proof.
+  intros n m E.
+  destruct E as [| n' m' E'].
+  - left. reflexivity.
+  - right. exists m'. split. reflexivity. apply E'.
+Qed.
+
+Theorem evSS_ev : forall n, ev (S (S n)) -> ev n.
+Proof.
+  intros n E. apply ev_inversion in E. destruct E as [H0|H1].
+  - discriminate H0.
+  - destruct H1 as [n' [Hnn' E']]. injection Hnn' as Hnn'.
+    rewrite Hnn'. apply E'.
+Qed.
+
+Theorem evSS_ev' : forall n,
+  ev (S (S n)) -> ev n.
+Proof.
+  intros n E. inversion E as [| n' E' Hnn'].
+  (* We are in the E = ev_SS n' E' case now. *)
+  apply E'.
+Qed.
+
+Theorem one_not_even : ~ ev 1.
+Proof.
+  intros H. apply ev_inversion in H. destruct H as [ | [m [Hm _]]].
+  - discriminate H.
+  - discriminate Hm.
+Qed.
+
+(* Exercise: 1 star, standard (inversion_practice) *)
+Theorem SSSSev__even : forall n,
+  ev (S (S (S (S n)))) -> ev n.
+Proof.
+  intros n E. inversion E as [| n' E' Hnn'].
+  apply evSS_ev'. apply E'.
+Qed.
+
+(* Exercise: 1 star, standard (ev5_nonsense) *)
+Theorem ev5_nonsense :
+  ev 5 -> 2 + 2 = 9.
+Proof.
+  intros H. inversion H as [| n H1 H2].
+  inversion H1 as [| n' H3 H4].
+  inversion H3.
+Qed.
+
+Theorem inversion_ex1 : forall (n m o : nat),
+  [n; m] = [o; o] -> [n] = [m].
+Proof.
+  intros n m o H. inversion H. reflexivity. Qed.
+
+Theorem inversion_ex2 : forall (n : nat),
+  S n = O -> 2 + 2 = 5.
+Proof.
+  intros n contra. inversion contra. Qed.
+
+Lemma ev_Even_firsttry : forall n,
+  ev n -> Even n.
+Proof.
+  (* WORKED IN CLASS *) unfold Even.
+  intros n E. inversion E as [EQ' | n' E' EQ'].
+  - (* E = ev_0 *) exists 0. reflexivity.
+  - (* E = ev_SS n' E' *)
+    assert (H: (exists k', n' = double k')
+               -> (exists n0, S (S n') = double n0)).
+        { intros [k' EQ'']. exists (S k'). simpl.
+          rewrite <- EQ''. reflexivity. }
+    apply H.
+  generalize dependent E'.
+Abort.
+
+Lemma ev_Even : forall n,
+  ev n -> Even n.
+Proof.
+  unfold Even. intros n E.
+  induction E as [|n' E' IH].
+  - (* E = ev_0 *)
+    exists 0. reflexivity.
+  - (* E = ev_SS n' E',  with IH : Even n' *)
+    destruct IH as [k Hk]. rewrite Hk.
+    exists (S k). simpl. reflexivity.
+Qed.
+
+Theorem ev_Even_iff : forall n,
+  ev n <-> Even n.
+Proof.
+  intros n. split.
+  - (* -> *) apply ev_Even.
+  - (* <- *) unfold Even. intros [k Hk]. rewrite Hk. apply ev_double.
+Qed.
+
+(* Exercise: 2 stars, standard (ev_sum) *)
+Theorem ev_sum : forall n m, ev n -> ev m -> ev (n + m).
+Proof.
+  intros n m Hn Hm.
+  induction Hn as [| n' Hn' IHn'].
+  - simpl. apply Hm.
+  - assert (H: S (S n') + m = S (S (n' + m))).
+    { simpl. reflexivity. }
+    rewrite H. apply ev_SS. apply IHn'.
+Qed.
+
+(* Exercise: 3 stars, advanced, especially useful (ev_ev__ev) *)
+Theorem ev_ev__ev : forall n m,
+  ev (n+m) -> ev n -> ev m.
+  (* Hint: There are two pieces of evidence you could attempt to induct upon
+      here. If one doesn't work, try the other. *)
+Proof.
+  intros n m Hnm Hn.
+  induction Hn as [| n' Hn' IHn'].
+  - simpl in Hnm. apply Hnm.
+  - assert (H: S (S n') + m = S (S (n' + m))).
+    { simpl. reflexivity. }
+    rewrite H in Hnm. apply evSS_ev in Hnm.
+    apply IHn'. apply Hnm.
+Qed.
+
+(* Exercise: 3 stars, standard, optional (ev_plus_plus) *)
+Theorem ev_plus_plus : forall n m p,
+  ev (n+m) -> ev (n+p) -> ev (m+p).
+Proof.
+  intros n m p Hnm Hnp.
+  apply ev_ev__ev with (n:=(n + n)).
+  - simpl.
+    assert (H: n + n + (m + p) = (n + m) + (n + p)).
+    { apply PeanoNat.Nat.add_shuffle1. }
+    rewrite H. apply ev_sum. apply Hnm. apply Hnp.
+  - simpl.
+    rewrite <- double_plus. apply ev_double.
+Qed.
+
+(* Exercise: 4 stars, advanced, optional (ev'_ev) *)
+Inductive ev' : nat -> Prop :=
+  | ev'_0 : ev' 0
+  | ev'_2 : ev' 2
+  | ev'_sum n m (Hn : ev' n) (Hm : ev' m) : ev' (n + m).
+Theorem ev'_ev : forall n, ev' n <-> ev n.
+Proof.
+  split.
+  - intros H. induction H as [].
+    + apply ev_0.
+    + apply ev_SS. apply ev_0.
+    + apply ev_sum. apply IHev'1. apply IHev'2.
+  - intros H. induction H as [].
+    + apply ev'_0.
+    + assert (H' : S (S n) = 2 + n).
+      { simpl. reflexivity. }
+      rewrite H'.
+      apply ev'_sum.
+      apply ev'_2.
+      apply IHev.
+Qed.
+
+Module Perm3Reminder.
+Inductive Perm3 {X : Type} : list X -> list X -> Prop :=
+  | perm3_swap12 (a b c : X) :
+      Perm3 [a;b;c] [b;a;c]
+  | perm3_swap23 (a b c : X) :
+      Perm3 [a;b;c] [a;c;b]
+  | perm3_trans (l1 l2 l3 : list X) :
+      Perm3 l1 l2 -> Perm3 l2 l3 -> Perm3 l1 l3.
+End Perm3Reminder.
+
+Lemma Perm3_symm : forall (X : Type) (l1 l2 : list X),
+  Perm3 l1 l2 -> Perm3 l2 l1.
+Proof.
+  intros X l1 l2 E.
+  induction E as [a b c | a b c | l1 l2 l3 E12 IH12 E23 IH23].
+  - apply perm3_swap12.
+  - apply perm3_swap23.
+  - apply (perm3_trans _ l2 _).
+    * apply IH23.
+    * apply IH12.
+Qed.
+
+(* Exercise: 2 stars, standard (Perm3_In) *)
+Lemma Perm3_In : forall (X : Type) (x : X) (l1 l2 : list X),
+    Perm3 l1 l2 -> In x l1 -> In x l2.
+Proof.
+  intros X x l1 l2 E.
+  induction E as [a b c|a b c|l1 l2 l3 E12 IH12 E23 IH23].
+  - intros [H1|[H2|[H3|H4]]].
+    + simpl. right. left. apply H1.
+    + simpl. left. apply H2.
+    + simpl. right. right. left. apply H3.
+    + destruct H4.
+  - intros [H1|[H2|[H3|H4]]].
+    + simpl. left. apply H1.
+    + simpl. right. right. left. apply H2.
+    + simpl. right. left. apply H3.
+    + destruct H4.
+  - intros H. apply IH23. apply IH12. apply H.
+Qed.
+
+(* Exercise: 1 star, standard, optional (Perm3_NotIn) *)
+Lemma Perm3_NotIn : forall (X : Type) (x : X) (l1 l2 : list X),
+    Perm3 l1 l2 -> ~In x l1 -> ~In x l2.
+Proof.
+  intros X x l1 l2 E.
+  induction E as [a b c|a b c|l1 l2 l3 E12 IH12 E23 IH23].
+  - simpl. apply contrapositive. intros [H1|[H2|[H3|H4]]].
+    + right. left. apply H1.
+    + left. apply H2.
+    + right. right. left. apply H3.
+    + destruct H4.
+  - simpl. apply contrapositive. intros [H1|[H2|[H3|H4]]].
+    + left. apply H1.
+    + right. right. left. apply H2.
+    + right. left. apply H3.
+    + destruct H4.
+  - simpl. intros H. apply IH23. apply IH12. apply H.
+Qed.
+
+(* Exercise: 2 stars, standard, optional (NotPerm3) *)
+Example Perm3_example2 : ~ Perm3 [1;2;3] [1;2;4].
+Proof.
+  simpl. intros H.
+  apply Perm3_In with (x:=3) in H.
+  - simpl in H. destruct H as [H1|[H2|[H3|H4]]].
+    + discriminate H1.
+    + discriminate H2.
+    + discriminate H3.
+    + destruct H4.
+  - unfold In. right. right. left. reflexivity.
+Qed.
