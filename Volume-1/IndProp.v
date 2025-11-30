@@ -506,3 +506,114 @@ Proof.
     + destruct H4.
   - unfold In. right. right. left. reflexivity.
 Qed.
+
+(* Exercising with Inductive Relations *)
+Module Playground.
+Inductive le : nat -> nat -> Prop :=
+  | le_n (n : nat) : le n n
+  | le_S (n m : nat) (H : le n m) : le n (S m).
+Notation "n <= m" := (le n m).
+
+Theorem test_le1 :
+  3 <= 3.
+Proof.
+  (* WORKED IN CLASS *)
+  apply le_n. Qed.
+Theorem test_le2 :
+  3 <= 6.
+Proof.
+  (* WORKED IN CLASS *)
+  apply le_S. apply le_S. apply le_S. apply le_n. Qed.
+Theorem test_le3 :
+  (2 <= 1) -> 2 + 2 = 5.
+Proof.
+  (* WORKED IN CLASS *)
+  intros H. inversion H. inversion H2. Qed.
+
+Definition lt (n m : nat) := le (S n) m.
+Notation "n < m" := (lt n m).
+Definition ge (m n : nat) : Prop := le n m.
+Notation "m >= n" := (ge m n).
+End Playground.
+
+(* Exercise: 3 stars, standard, especially useful (le_facts) *)
+Lemma le_trans : forall m n o, m <= n -> n <= o -> m <= o.
+Proof.
+  intros m n o Hmn Hno.
+  induction Hno.
+  - apply Hmn.
+  - apply le_S. apply IHHno. apply Hmn.
+Qed.
+Theorem O_le_n : forall n,
+  0 <= n.
+Proof.
+  intros n.
+  induction n.
+  - apply le_n.
+  - apply le_S. apply IHn.
+Qed.
+Theorem n_le_m__Sn_le_Sm : forall n m,
+  n <= m -> S n <= S m.
+Proof.
+  intros n m Hnm.
+  induction Hnm.
+  - apply le_n.
+  - apply le_S in IHHnm. apply IHHnm.
+Qed.
+Theorem Sn_le_Sm__n_le_m : forall n m,
+  S n <= S m -> n <= m.
+Proof.
+  intros n m H.
+  inversion H as [| n' m'].
+  - apply le_n.
+  - assert (H' : n <= S n).
+    { apply le_S. apply le_n. }
+    apply le_trans with (n:= S n).
+    apply H'. apply H0.
+Qed.
+Theorem le_plus_l : forall a b,
+  a <= a + b.
+Proof.
+  intros a b.
+  induction b.
+  - rewrite <- plus_n_O. apply le_n.
+  - rewrite <- plus_n_Sm. apply le_S. apply IHb.
+Qed.
+
+(* Exercise: 2 stars, standard, especially useful (plus_le_facts1) *)
+Theorem plus_le : forall n1 n2 m,
+  n1 + n2 <= m ->
+  n1 <= m /\ n2 <= m.
+Proof.
+  intros n1 n2 m H.
+  split.
+  - assert (H1' : n1 <= n1 + n2).
+    { apply le_plus_l. }
+    apply le_trans with (n:= n1 + n2).
+    apply le_plus_l. apply H.
+  - assert (H2' : n2 <= n1 + n2).
+    { rewrite add_comm. apply le_plus_l. }
+    apply le_trans with (n:= n1 + n2).
+    apply H2'. apply H.
+Qed.
+
+Theorem plus_le_cases : forall n m p q,
+  n + m <= p + q -> n <= p \/ m <= q.
+Proof.
+  induction n.
+  - intros H. left. apply O_le_n.
+  - intros. destruct p.
+    + rewrite plus_O_n in H.
+      apply plus_le in H.
+      destruct H.
+      right. apply H0.
+    + simpl in H.
+      rewrite plus_n_Sm with n m in H.
+      rewrite plus_n_Sm with p q in H.
+      apply IHn in H. destruct H.
+      * left. apply n_le_m__Sn_le_Sm. apply H.
+      * right. apply Sn_le_Sm__n_le_m in H. apply H.
+Qed.
+(**
+  Note: Sometimes we should do fewer intros before induction to obtain a more general induction hypothesis.
+*)
