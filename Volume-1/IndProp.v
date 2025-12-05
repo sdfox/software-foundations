@@ -617,3 +617,123 @@ Qed.
 (**
   Note: Sometimes we should do fewer intros before induction to obtain a more general induction hypothesis.
 *)
+
+(* Exercise: 2 stars, standard, especially useful (plus_le_facts2) *)
+Theorem plus_le_compat_l : forall n m p,
+  n <= m ->
+  p + n <= p + m.
+Proof.
+  intros n m p H.
+  induction p.
+  - simpl. apply H.
+  - simpl. apply n_le_m__Sn_le_Sm. apply IHp.
+Qed.
+Theorem plus_le_compat_r : forall n m p,
+  n <= m ->
+  n + p <= m + p.
+Proof.
+  intros n m p H.
+  rewrite add_comm.
+  assert (H' : m + p = p + m).
+  { rewrite add_comm. reflexivity. }
+  rewrite H'.
+  apply plus_le_compat_l.
+  apply H.
+Qed.
+Theorem le_plus_trans : forall n m p,
+  n <= m ->
+  n <= m + p.
+Proof.
+  intros n m p H.
+  induction p.
+  - rewrite add_0_r. apply H.
+  - simpl. apply le_S in IHp.
+    rewrite <- plus_n_Sm.
+    apply IHp.
+Qed.
+
+(* Exercise: 3 stars, standard, optional (lt_facts) *)
+Definition lt (n m : nat) := le (S n) m.
+Notation "n < m" := (lt n m).
+Definition ge (m n : nat) : Prop := le n m.
+Notation "m >= n" := (ge m n).
+Theorem lt_ge_cases : forall n m,
+  n < m \/ n >= m.
+Proof.
+  intros n m. generalize dependent n.
+  induction m.
+  - right. unfold ge. apply O_le_n.
+  - induction n.
+    + left. unfold lt. rewrite <- PeanoNat.Nat.add_1_r.
+      assert (H' : S m = m + 1).
+      { rewrite <- PeanoNat.Nat.add_1_r. reflexivity. }
+      rewrite H'. apply plus_le_compat_r. apply O_le_n.
+    + destruct IHn. inversion H.
+      * right. unfold ge. apply le_n.
+      * left. unfold lt.
+        apply n_le_m__Sn_le_Sm. apply H2.
+      * right. unfold ge. unfold ge in H. apply le_S in H. apply H.
+Qed.
+Theorem n_lt_m__n_le_m : forall n m,
+  n < m ->
+  n <= m.
+Proof.
+  destruct n.
+  - intros m H. apply O_le_n.
+  - intros m H. unfold lt in H. apply le_S in H.
+    apply Sn_le_Sm__n_le_m in H. apply H.
+Qed.
+Theorem plus_lt : forall n1 n2 m,
+  n1 + n2 < m ->
+  n1 < m /\ n2 < m.
+Proof.
+  intros n1 n2 m H.
+  split.
+  - unfold lt. unfold lt in H. rewrite <- plus_Sn_m in H.
+    apply le_trans with (n:=S n1 + n2).
+    apply le_plus_l. apply H.
+  - unfold lt. unfold lt in H. rewrite <- plus_Sn_m in H.
+    apply le_trans with (n:= S n1 + n2).
+    rewrite PeanoNat.Nat.add_succ_comm. rewrite add_comm.
+    apply le_plus_l. apply H.
+Qed.
+
+(* Exercise: 4 stars, standard, optional (leb_le) *)
+Theorem leb_complete : forall n m,
+  n <=? m = true -> n <= m.
+Proof.
+  induction n.
+  - intros m H. apply O_le_n.
+  - induction m.
+    + simpl. intros H. discriminate H.
+    + simpl. intros H. apply n_le_m__Sn_le_Sm.
+      apply IHn in H. apply H.
+Qed.
+Theorem leb_correct : forall n m,
+  n <= m ->
+  n <=? m = true.
+Proof.
+  induction n.
+  - intros m H. simpl. reflexivity.
+  - induction m.
+    + intros H. inversion H.
+    + intros H. simpl.
+      apply Sn_le_Sm__n_le_m in H. apply IHn in H.
+      apply H.
+Qed.
+(* Hint: The next two can easily be proved without using induction. *)
+Theorem leb_iff : forall n m,
+  n <=? m = true <-> n <= m.
+Proof.
+  intros n m. split.
+  - apply leb_complete.
+  - apply leb_correct.
+Qed.
+Theorem leb_true_trans : forall n m o,
+  n <=? m = true -> m <=? o = true -> n <=? o = true.
+Proof.
+  intros n m o Hnm Hmo.
+  apply leb_iff. apply le_trans with (n:=m).
+  apply leb_iff in Hnm. apply Hnm.
+  apply leb_iff in Hmo. apply Hmo.
+Qed.
