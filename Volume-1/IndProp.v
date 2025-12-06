@@ -737,3 +737,147 @@ Proof.
   apply leb_iff in Hnm. apply Hnm.
   apply leb_iff in Hmo. apply Hmo.
 Qed.
+
+Module R.
+(* Exercise: 3 stars, standard, especially useful (R_provability) *)
+Inductive R : nat -> nat -> nat -> Prop :=
+  | c1 : R 0 0 0
+  | c2 m n o (H : R m n o) : R (S m) n (S o)
+  | c3 m n o (H : R m n o) : R m (S n) (S o)
+  | c4 m n o (H : R (S m) (S n) (S (S o))) : R m n o
+  | c5 m n o (H : R m n o) : R n m o
+.
+
+Example R112 : R 1 1 2.
+Proof.
+  apply c3.
+  apply c2.
+  apply c1.
+Qed.
+Example R226 : R 2 2 6.
+Proof.
+Abort.
+(**
+1.
+R 1 1 2 provable
+R 2 2 6 unprovable
+2.
+Drop constructor c5, the set of provable propositions would not change.
+Because any proposition apply c5 can only get the proposition same as itself.
+3.
+If we dropped constructor c4 from the definition of R, the set of provable propositions would change.
+Because applying c4 can change a proposition in a specific way.
+*)
+Definition manual_grade_for_R_provability : option (nat*string) := None.
+
+(* Exercise: 3 stars, standard, optional (R_fact) *)
+Definition fR : nat -> nat -> nat :=
+  plus.
+Theorem R_equiv_fR : forall m n o, R m n o <-> fR m n = o.
+Proof.
+  intros m n o.
+  split.
+  - simpl. unfold fR. intros H. induction H.
+    + simpl. reflexivity.
+    + simpl. apply eq_S. apply IHR.
+    + rewrite <- plus_n_Sm. apply eq_S. apply IHR.
+    + simpl in IHR. rewrite <- plus_n_Sm in IHR. apply eq_add_S in IHR. apply eq_add_S in IHR. apply IHR.
+    + rewrite add_comm. apply IHR.
+  - generalize dependent n. generalize dependent m. generalize dependent o.
+    unfold fR.
+    assert (H1 : forall n1, R n1 0 n1).
+    { induction n1. - apply c1. - apply c2. apply IHn1. }
+    assert (H2 : forall n2, R 0 n2 n2).
+    { induction n2. - apply c1. - apply c3. apply IHn2. }
+    induction m.
+    + simpl. intros n H. rewrite H. apply H2.
+    + simpl. intros n H. apply c4. apply c2. apply c2.
+      Search (S (_ + _) = _ + S _). rewrite plus_n_Sm in H.
+      apply IHm in H. apply H.
+Qed.
+End R.
+
+(* Exercise: 4 stars, advanced (subsequence) *)
+Inductive subseq : list nat -> list nat -> Prop :=
+  | s1 (l : list nat) : subseq [] l
+  | s2 (l1 l2 : list nat) (h : nat) (H : subseq l1 l2) : subseq (h :: l1) (h :: l2)
+  | s3 (l1 l2 : list nat) (h : nat) (H : subseq l1 l2) : subseq l1 (h :: l2)
+.
+(**
+  same as:
+Inductive subseq : list nat -> list nat -> Prop :=
+  | s1 : forall (l : list nat) ,subseq [] l
+  | s2 : forall (l1 l2 : list nat) (h : nat), subseq l1 l2 -> subseq (h :: l1) (h :: l2)
+  | s3 : forall (l1 l2 : list nat) (h : nat), subseq l1 l2 -> subseq l1 (h :: l2)
+.
+*)
+Theorem subseq_refl : forall (l : list nat), subseq l l.
+Proof.
+  intros l.
+  induction l.
+  - apply s1.
+  - simpl. apply s2. apply IHl.
+Qed.
+Theorem subseq_app : forall (l1 l2 l3 : list nat),
+  subseq l1 l2 ->
+  subseq l1 (l2 ++ l3).
+Proof.
+  intros l1 l2 l3 H.
+  induction H.
+  - simpl. apply s1.
+  - simpl. apply s2. apply IHsubseq.
+  - simpl. apply s3. apply IHsubseq.
+Qed.
+Theorem subseq_trans : forall (l1 l2 l3 : list nat),
+  subseq l1 l2 ->
+  subseq l2 l3 ->
+  subseq l1 l3.
+(* Hint: be careful about what you are doing induction on and which
+     other things need to be generalized... *)
+Proof.
+  intros l1 l2 l3 H12 H23.
+  generalize dependent H12.
+  generalize dependent l1.
+  induction H23.
+  - intros l1 H. inversion H. apply s1.
+  - intros. inversion H12.
+    + apply s1.
+    + apply s2. apply IHsubseq. apply H1.
+    + apply s3. apply IHsubseq. apply H1.
+  - intros. apply s3. apply IHsubseq. apply H12.
+Qed.
+
+(* Exercise: 2 stars, standard, optional (R_provability2) *)
+Inductive R : nat -> list nat -> Prop :=
+  | c1                    : R 0     []
+  | c2 n l (H: R n     l) : R (S n) (n :: l)
+  | c3 n l (H: R (S n) l) : R n     l.
+(**
+  R 2 [1;0]       provable
+  R 1 [1;2;1;0]   unprovable
+  R 6 [3;2;1;0]   unprovable.
+*)
+(* Exercise: 2 stars, standard, optional (total_relation) *)
+Inductive total_relation : nat -> nat -> Prop :=
+  | t1 : total_relation 0 0
+  | t2 : forall (m n : nat), total_relation (S m) n
+  | t3 : forall (m n : nat), total_relation m (S n)
+.
+Theorem total_relation_is_total : forall n m, total_relation n m.
+Proof.
+  intros n m.
+  induction n.
+  - induction m.
+    + apply t1.
+    + apply t3.
+  - apply t2.
+Qed.
+(* Exercise: 2 stars, standard, optional (empty_relation) *)
+Inductive empty_relation : nat -> nat -> Prop :=
+.
+Theorem empty_relation_is_empty : forall n m, ~ empty_relation n m.
+Proof.
+  unfold not.
+  intros.
+  inversion H.
+Qed.
