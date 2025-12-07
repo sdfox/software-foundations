@@ -881,3 +881,193 @@ Proof.
   intros.
   inversion H.
 Qed.
+
+(* Case Study: Regular Expressions *)
+Inductive reg_exp (T : Type) : Type :=
+  | EmptySet
+  | EmptyStr
+  | Char (t : T)
+  | App (r1 r2 : reg_exp T)
+  | Union (r1 r2 : reg_exp T)
+  | Star (r : reg_exp T).
+Arguments EmptySet {T}.
+Arguments EmptyStr {T}.
+Arguments Char {T} _.
+Arguments App {T} _ _.
+Arguments Union {T} _ _.
+Arguments Star {T} _.
+
+Reserved Notation "s =~ re" (at level 80).
+Inductive exp_match {T} : list T -> reg_exp T -> Prop :=
+  | MEmpty : [] =~ EmptyStr
+  | MChar x : [x] =~ (Char x)
+  | MApp s1 re1 s2 re2
+             (H1 : s1 =~ re1)
+             (H2 : s2 =~ re2)
+           : (s1 ++ s2) =~ (App re1 re2)
+  | MUnionL s1 re1 re2
+                (H1 : s1 =~ re1)
+              : s1 =~ (Union re1 re2)
+  | MUnionR s2 re1 re2
+                (H2 : s2 =~ re2)
+              : s2 =~ (Union re1 re2)
+  | MStar0 re : [] =~ (Star re)
+  | MStarApp s1 s2 re
+                 (H1 : s1 =~ re)
+                 (H2 : s2 =~ (Star re))
+               : (s1 ++ s2) =~ (Star re)
+
+  where "s =~ re" := (exp_match s re).
+
+Example reg_exp_ex1 : [1] =~ Char 1.
+Proof.
+  apply MChar.
+Qed.
+Example reg_exp_ex2 : [1; 2] =~ App (Char 1) (Char 2).
+Proof.
+  apply (MApp [1]).
+  - apply MChar.
+  - apply MChar.
+Qed.
+Example reg_exp_ex3 : ~ ([1; 2] =~ Char 1).
+Proof.
+  intros H. inversion H.
+Qed.
+Fixpoint reg_exp_of_list {T} (l : list T) :=
+  match l with
+  | [] => EmptyStr
+  | x :: l' => App (Char x) (reg_exp_of_list l')
+  end.
+Example reg_exp_ex4 : [1; 2; 3] =~ reg_exp_of_list [1; 2; 3].
+Proof.
+  simpl. apply (MApp [1]).
+  { apply MChar. }
+  apply (MApp [2]).
+  { apply MChar. }
+  apply (MApp [3]).
+  { apply MChar. }
+  apply MEmpty.
+Qed.
+Lemma MStar1 :
+  forall T s (re : reg_exp T) ,
+    s =~ re ->
+    s =~ Star re.
+Proof.
+  intros.
+  rewrite <- (app_nil_r _ s).
+  apply MStarApp.
+  - apply H.
+  - apply MStar0.
+Qed.
+
+(* Exercise: 3 stars, standard (exp_match_ex1) *)
+Lemma EmptySet_is_empty : forall T (s : list T),
+  ~ (s =~ EmptySet).
+Proof.
+  intros T s H.
+  inversion H.
+Qed.
+Lemma MUnion' : forall T (s : list T) (re1 re2 : reg_exp T),
+  s =~ re1 \/ s =~ re2 ->
+  s =~ Union re1 re2.
+Proof.
+  intros T s re1 re2 [H|H].
+  - apply MUnionL. apply H.
+  - apply MUnionR. apply H.
+Qed.
+Lemma MStar' : forall T (ss : list (list T)) (re : reg_exp T),
+  (forall s, In s ss -> s =~ re) ->
+  fold app ss [] =~ Star re.
+Proof.
+  intros.
+  induction ss.
+  - simpl. apply MStar0.
+  - simpl. apply (MStarApp x).
+    + apply H. simpl. left. reflexivity.
+    + apply IHss. intros s H'.
+      apply H. simpl. right. apply H'.
+Qed.
+
+(* Exercise: 2 stars, standard, optional (EmptyStr_not_needed) *)
+Definition EmptyStr' {T:Type} := @Star T (EmptySet).
+Lemma EmptyStr2EmptyStr' : forall T (s: list T),
+  s =~ EmptyStr <-> s =~ EmptyStr'.
+Proof.
+  intros T s.
+  split.
+  - intros H.
+    inversion H.
+    unfold EmptyStr'.
+    apply MStar0.
+  - intros H.
+    inversion H.
+    + apply MEmpty.
+    + inversion H2.
+Qed.
+
+Fixpoint re_chars {T} (re : reg_exp T) : list T :=
+  match re with
+  | EmptySet => []
+  | EmptyStr => []
+  | Char x => [x]
+  | App re1 re2 => re_chars re1 ++ re_chars re2
+  | Union re1 re2 => re_chars re1 ++ re_chars re2
+  | Star re => re_chars re
+  end.
+Theorem in_re_match : forall T (s : list T) (re : reg_exp T) (x : T),
+  s =~ re ->
+  In x s ->
+  In x (re_chars re).
+Proof.
+  intros T s re x Hmatch Hin.
+  induction Hmatch
+    as [| x'
+        | s1 re1 s2 re2 Hmatch1 IH1 Hmatch2 IH2
+        | s1 re1 re2 Hmatch IH | s2 re1 re2 Hmatch IH
+        | re | s1 s2 re Hmatch1 IH1 Hmatch2 IH2].
+  (* WORKED IN CLASS *)
+  - (* MEmpty *)
+    simpl in Hin. destruct Hin.
+  - (* MChar *)
+    simpl. simpl in Hin.
+    apply Hin.
+  - (* MApp *)
+    simpl.
+    rewrite In_app_iff in *.
+    destruct Hin as [Hin | Hin].
+    + (* In x s1 *)
+      left. apply (IH1 Hin).
+    + (* In x s2 *)
+      right. apply (IH2 Hin).
+  - (* MUnionL *)
+    simpl. rewrite In_app_iff.
+    left. apply (IH Hin).
+  - (* MUnionR *)
+    simpl. rewrite In_app_iff.
+    right. apply (IH Hin).
+  - (* MStar0 *)
+    destruct Hin.
+  - (* MStarApp *)
+    simpl.
+    rewrite In_app_iff in Hin.
+    destruct Hin as [Hin | Hin].
+    + (* In x s1 *)
+      apply (IH1 Hin).
+    + (* In x s2 *)
+      apply (IH2 Hin).
+Qed.
+
+(* Exercise: 4 stars, standard (re_not_empty) *)
+Fixpoint re_not_empty {T : Type} (re : reg_exp T) : bool :=
+  match re with
+  | EmptySet => false
+  | EmptyStr => true
+  | Char x => true
+  | App r1 r2 => andb (re_not_empty r1) (re_not_empty r2)
+  | Union r1 r2 => orb (re_not_empty r1) (re_not_empty r2)
+  | Star re => true
+  end.
+Lemma re_not_empty_correct : forall T (re : reg_exp T),
+  (exists s, s =~ re) <-> re_not_empty re = true.
+Proof.
+  (* FILL IN HERE *) Admitted.
