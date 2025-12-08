@@ -1070,4 +1070,30 @@ Fixpoint re_not_empty {T : Type} (re : reg_exp T) : bool :=
 Lemma re_not_empty_correct : forall T (re : reg_exp T),
   (exists s, s =~ re) <-> re_not_empty re = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros. split.
+  - induction re.
+    + (* EmptySet *) intros [s H]. inversion H.
+    + (* EmptyStr *) intros [s H]. simpl. reflexivity.
+    + (* Char x *) intros [s H]. simpl. reflexivity.
+    + (* App *) intros [s H]. simpl. inversion H. subst.
+      Search andb. apply andb_true_iff. split.
+      * apply IHre1. exists s4. apply H3.
+      * apply IHre2. exists s5. apply H4.
+    + (* Union *) intros [s H]. simpl.
+      Search orb. apply orb_true_iff. inversion H.
+      * subst. left. apply IHre1. exists s. apply H2.
+      * subst. right. apply IHre2. exists s. apply H1.
+    + (* Star *) simpl. intros [s H]. reflexivity.
+  - induction re.
+    + (* EmptySet *) intros H. inversion H.
+    + (* EmptyStr *) intros H. exists []. apply MEmpty.
+    + (* Char *) intros H. exists [t]. apply MChar.
+    + (* App *) intros H. apply andb_true_iff in H as [H1 H2].
+      apply IHre1 in H1. destruct H1 as [s1 H1'].
+      apply IHre2 in H2. destruct H2 as [s2 H2'].
+      exists (s1++s2). now apply MApp.
+    + (* Union *) intros H. apply orb_true_iff in H as [H1|H2].
+      apply IHre1 in H1. destruct H1 as [s1 H1']. exists s1. now apply MUnionL.
+      apply IHre2 in H2. destruct H2 as [s2 H2']. exists s2. now apply MUnionR.
+    + (* Star *) intros H. exists []. apply MStar0.
+Qed.
