@@ -1097,3 +1097,85 @@ Proof.
       apply IHre2 in H2. destruct H2 as [s2 H2']. exists s2. now apply MUnionR.
     + (* Star *) intros H. exists []. apply MStar0.
 Qed.
+
+Lemma star_app: forall T (s1 s2 : list T) (re : reg_exp T),
+  s1 =~ Star re ->
+  s2 =~ Star re ->
+  s1 ++ s2 =~ Star re.
+Proof.
+  intros T s1 s2 re H1.
+  induction H1
+    as [|x'|s1 re1 s2' re2 Hmatch1 IH1 Hmatch2 IH2
+        |s1 re1 re2 Hmatch IH|re1 s2' re2 Hmatch IH
+        |re''|s1 s2' re'' Hmatch1 IH1 Hmatch2 IH2].
+  - (* MEmpty *)
+    simpl. intros H. apply H.
+  - (* MChar. *) intros H. simpl. (* Stuck... *)
+Abort.
+
+Lemma star_app: forall T (s1 s2 : list T) (re re' : reg_exp T),
+  re' = Star re ->
+  s1 =~ re' ->
+  s2 =~ Star re ->
+  s1 ++ s2 =~ Star re.
+Proof.
+  intros.
+  induction H0.
+  - simpl. apply H1.
+  - simpl.
+Abort.
+
+Lemma star_app: forall T (s1 s2 : list T) (re : reg_exp T),
+  s1 =~ Star re ->
+  s2 =~ Star re ->
+  s1 ++ s2 =~ Star re.
+Proof.
+  intros T s1 s2 re H1.
+  remember (Star re) as re' eqn:Eq.
+  induction H1
+    as [|x'|s1 re1 s2' re2 Hmatch1 IH1 Hmatch2 IH2
+        |s1 re1 re2 Hmatch IH|re1 s2' re2 Hmatch IH
+        |re''|s1 s2' re'' Hmatch1 IH1 Hmatch2 IH2].
+   - (* MEmpty *) discriminate.
+  - (* MChar *) discriminate.
+  - (* MApp *) discriminate.
+  - (* MUnionL *) discriminate.
+  - (* MUnionR *) discriminate.
+  - (* MStar0 *)
+    intros H. apply H.
+  - (* MStarApp *)
+    intros H1. rewrite <- app_assoc.
+    apply MStarApp.
+    + apply Hmatch1.
+    + apply IH2.
+      * apply Eq.
+      * apply H1.
+Qed.
+
+(* Exercise: 4 stars, standard, optional (exp_match_ex2) *)
+Lemma MStar'' : forall T (s : list T) (re : reg_exp T),
+  s =~ Star re ->
+  exists ss : list (list T),
+    s = fold app ss []
+    /\ forall s', In s' ss -> s' =~ re.
+Proof.
+  intros T s re H.
+  remember (Star re) as re' eqn:Eq.
+  induction H
+     as [| | | |
+        |re''|s1 s2' re'' H1 IH1 H2 IH2].
+  - (* MEmpty *) discriminate.
+  - (* MChar *) discriminate.
+  - (* MApp *) discriminate.
+  - (* MUnionL *) discriminate.
+  - (* MUnionR *) discriminate.
+  - (* MStar0 *) exists []. simpl. split. reflexivity. intros s' H. destruct H.
+  - (* MStarApp *)
+    inversion Eq.
+    apply IH2 in Eq. inversion Eq. inversion H.
+    exists (s1 :: x). split.
+    + subst. simpl. reflexivity.
+    + intros s' [H'|H'].
+      * subst. apply H1.
+      * subst. apply H4. apply H'.
+Qed.
