@@ -1179,3 +1179,75 @@ Proof.
       * subst. apply H1.
       * subst. apply H4. apply H'.
 Qed.
+
+(* Exercise: 5 stars, advanced (weak_pumping) *)
+Module Pumping.
+Fixpoint pumping_constant {T} (re : reg_exp T) : nat :=
+  match re with
+  | EmptySet => 1
+  | EmptyStr => 1
+  | Char _ => 2
+  | App re1 re2 =>
+      pumping_constant re1 + pumping_constant re2
+  | Union re1 re2 =>
+      pumping_constant re1 + pumping_constant re2
+  | Star r => pumping_constant r
+  end.
+Lemma pumping_constant_ge_1 :
+  forall T (re : reg_exp T),
+    pumping_constant re >= 1.
+ Proof.
+  intros T re. induction re.
+  - (* EmptySet *)
+    apply le_n.
+  - (* EmptyStr *)
+    apply le_n.
+  - (* Char *)
+    apply le_S. apply le_n.
+  - (* App *)
+    simpl.
+    apply le_trans with (n:=pumping_constant re1).
+    apply IHre1. apply le_plus_l.
+  - (* Union *)
+    simpl.
+    apply le_trans with (n:=pumping_constant re1).
+    apply IHre1. apply le_plus_l.
+  - (* Star *)
+    simpl. apply IHre.
+Qed.
+Search le.
+Lemma pumping_constant_0_false :
+  forall T (re : reg_exp T),
+    pumping_constant re = 0 -> False.
+Proof.
+  intros T re H.
+  assert (Hp1 : pumping_constant re >= 1).
+  { apply pumping_constant_ge_1. }
+  rewrite H in Hp1. inversion Hp1.
+Qed.
+Fixpoint napp {T} (n : nat) (l : list T) : list T :=
+  match n with
+  | 0 => []
+  | S n' => l ++ napp n' l
+  end.
+Lemma napp_plus: forall T (n m : nat) (l : list T),
+  napp (n + m) l = napp n l ++ napp m l.
+Proof.
+  intros T n m l.
+  induction n as [|n IHn].
+  - reflexivity.
+  - simpl. rewrite IHn, app_assoc. reflexivity.
+Qed.
+Lemma napp_star :
+  forall T m s1 s2 (re : reg_exp T),
+    s1 =~ re -> s2 =~ Star re ->
+    napp m s1 ++ s2 =~ Star re.
+Proof.
+  intros T m s1 s2 re Hs1 Hs2.
+  induction m.
+  - simpl. apply Hs2.
+  - simpl. rewrite <- app_assoc.
+    apply MStarApp.
+    + apply Hs1.
+    + apply IHm.
+Qed.
